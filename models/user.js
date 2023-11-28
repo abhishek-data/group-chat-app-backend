@@ -16,17 +16,14 @@ const User = sequelize.define("User", {
         type: Sequelize.STRING,
         allowNull: false
     },
+    phone: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
     password: {
         type: Sequelize.STRING,
         allowNull: false
     },
-    ispremiumuser: {
-        type: Sequelize.BOOLEAN,
-
-    },
-    totalExpenses: {
-        type: Sequelize.INTEGER,
-    }
 })
 
 
