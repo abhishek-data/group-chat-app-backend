@@ -1,4 +1,5 @@
 const Chat = require('../models/chat')
+const User = require('../models/user')
 
 
 exports.addChat = async (req, res) => {
@@ -9,5 +10,20 @@ exports.addChat = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ error: "Internal Server Error" })
+    }
+}
+
+exports.getChats = async (req, res, next) => {
+    try {
+        const chats = await Chat.findAll({
+            include: {
+                model: User,
+                attributes: ['id', 'fullname']
+            },
+        })
+        return res.status(200).json({ chats })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Internal Server Error." })
     }
 }

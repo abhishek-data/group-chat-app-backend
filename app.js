@@ -18,14 +18,15 @@ app.use(authRouter);
 app.use(chatRouter)
 
 User.hasMany(Chat);
+Chat.belongsTo(User);
 
 const PORT = process.env.PORT || 3000;
 
 
 
 sequelize
-    // .sync()
-    .sync({ force: true })
+    .sync()
+    // .sync({ force: true })
     .then(() => {
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
