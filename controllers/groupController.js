@@ -3,6 +3,7 @@ const Group = require("../models/group")
 const UserGroup = require("../models/userGroup")
 const Chat = require("../models/chat")
 const User = require("../models/user")
+const sequelize = require("../utils/database")
 
 exports.createGroup = async (req, res, next) => {
     try {
@@ -28,19 +29,27 @@ exports.getGroups = async (req, res, next) => {
 
 exports.deleteGroup = async (req, res, next) => {
     try {
-        const groupId = req.params.groupId
-        const adminCheck = await UserGroup.findOne({ where: { groupId, userid: req.user.id } })
+        const groupId = req.params.groupId;
+        const adminCheck = await UserGroup.findOne({ where: { groupId, userid: req.user.id } });
+
         console.log(adminCheck);
-        if (!adminCheck.isAdmin) {
-            return res.status(401).json({ error: "Unauthorized! you are not the admin of this group." })
+
+        if (!adminCheck || !adminCheck.isAdmin) {
+            return res.status(401).json({ error: "Unauthorized! You are not the admin of this group." });
         }
-        await Chat.destroy({ where: { groupId } })
-        await Group.destroy({ where: { id: groupId } })
+
+        await sequelize.transaction(async (t) => {
+            await Chat.destroy({ where: { groupId }, transaction: t });
+            await Group.destroy({ where: { id: groupId }, transaction: t });
+        });
+
+        res.status(200).json({ message: "Group deleted successfully." });
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: "Internal server error" })
+        res.status(500).json({ error: "Internal server error" });
     }
-}
+};
+
 
 exports.getUsers = async (req, res, next) => {
     try {
@@ -48,10 +57,11 @@ exports.getUsers = async (req, res, next) => {
         if (groupId) {
             const users = await UserGroup.findAll({ where: { groupId }, attributes: ["userid"] })
             const userIds = users.map(user => user.userid)
-            const groupUsers = await User.findAll({ where: { id: { [Op.in]: userIds } }, include: [{ module: Group, where: { id: groupId } }], attributes: ["id", "username", "email"] })
+            const groupUsers = await User.findAll({ where: { id: { [Op.in]: userIds } }, include: [{ module: Group, where: { id: groupId } }], attributes: ["id", "fullname", "email"] })
             res.status(200).json({ groupUsers })
         } else {
-            const users = await User.findAll({ attributes: ["id", "username", "email"], where: { id: { [Op.ne]: req.user.id } } })
+            const users = await User.findAll({ attributes: ["id", "fullname", "email"], where: { id: { [Op.ne]: req.user.id } } })
+            console.log(users);
             res.status(200).json({ users })
         }
     } catch (error) {
@@ -64,11 +74,11 @@ exports.addUserToGroup = async (req, res, next) => {
     try {
         const groupId = req.params.groupId
         const { userId } = req.body
-        const adminCheck = await UserGroup.findOne({ where: { groupId, userid: req.user.id } })
+        const adminCheck = await UserGroup.findOne({ where: { GroupId: groupId, UserId: req.user.id } })
         if (!adminCheck.isAdmin) {
             return res.status(401).json({ error: "Unauthorized! you are not the admin of this group." })
         }
-        const userGroup = await UserGroup.create({ groupId, userid: userId })
+        const userGroup = await UserGroup.create({ GroupId: groupId, UserId: userId })
         res.status(201).json({ message: "User added successfully", userGroup })
     } catch (error) {
         res.status(500).json({ error: "Internal server error" })

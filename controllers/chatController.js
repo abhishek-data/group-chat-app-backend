@@ -5,7 +5,7 @@ const User = require('../models/user')
 exports.addChat = async (req, res) => {
     try {
         const { text, name, groupId } = req.body
-        const chat = await Chat.create({ message_text: text, groupId: groupId, name: name })
+        const chat = await Chat.create({ message_text: text, name: name, GroupId:groupId, UserId:req.user.id })
         return res.status(201).json({ sucess:true, message:"message sent.", chat })
     } catch (error) {
         console.log(error);

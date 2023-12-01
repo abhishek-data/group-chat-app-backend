@@ -1,5 +1,5 @@
 const express = require('express')
-const {authenticate} = require('../middleware/auth')
+const { authenticate } = require('../middleware/auth')
 const groupController = require('../controllers/groupController')
 
 const router = express.Router()
@@ -10,7 +10,7 @@ router.delete('/delete-group/:groupId', authenticate, groupController.deleteGrou
 
 router.get('/get-groups', authenticate, groupController.getGroups)
 
-router.get('/get-users/:groupId', authenticate, groupController.getUsers)
+router.get('/get-users/:groupId?', authenticate, groupController.getUsers)
 
 router.post('/add-user/:groupId', authenticate, groupController.addUserToGroup)
 
