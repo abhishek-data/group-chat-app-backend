@@ -29,8 +29,8 @@ exports.signup = async (req, res, next) => {
     }
 }
 
-const generateAcessToken = (id, email) => {
-    return jwt.sign({ userId: id, email: email }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' })
+const generateAcessToken = (id, email, fullname) => {
+    return jwt.sign({ userId: id, email: email, name: fullname }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' })
 }
 
 
@@ -46,7 +46,7 @@ exports.login = async (req, res, next) => {
                 return res.status(500).json({ "message": "Internal Server Error" })
             }
             if (result) {
-                const token = generateAcessToken(user.id, email)
+                const token = generateAcessToken(user.id, email, user.fullname)
                 return res.status(200).json({ "message": "You have sucessfully logged in", token })
             }
             return res.status(401).json({ "message": "You have entered a wrong password" })
@@ -55,4 +55,6 @@ exports.login = async (req, res, next) => {
         res.status(500).json({ error: "Internal Server Error" })
     }
 }
+
+
 
