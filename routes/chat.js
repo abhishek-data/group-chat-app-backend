@@ -10,7 +10,7 @@ router.post('/chat',authenticate, chatController.addChat);
 
 router.get('/chat/:groupId', authenticate, chatController.getChats)
 
-router.post('/upload-file', authenticate,upload.single('image'), chatController.uploadFile)
+router.post('/upload-file', authenticate,upload.single('file'), chatController.uploadFile)
 
 
 
