@@ -1,4 +1,5 @@
 const express = require('express');
+const http = require('http')
 const cors = require('cors');
 require('dotenv').config();
 const sequelize = require('./utils/database');
@@ -7,6 +8,7 @@ const fs = require('fs')
 const helmet = require('helmet')
 const morgan = require('morgan')
 const compression = require('compression')
+const { Server } = require('socket.io')
 
 //router
 const authRouter = require('./routes/auth');
@@ -20,10 +22,13 @@ const Chat = require('./models/chat');
 const UserGroup = require('./models/userGroup');
 
 const app = express();
-const accessLogStream = fs.createWriteStream(
-    path.join(__dirname, 'access.log'),
-    { flags: 'a' }
-);
+const server = http.createServer(app)
+const io = new Server(server, {
+    cors: {
+        origin: "http://127.0.0.1:5173",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    },
+});
 
 
 app.use(cors({
@@ -31,11 +36,28 @@ app.use(cors({
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
+
+io.on('connection', socket => {
+    socket.on('user-message', message => {
+        io.emit('message', message)
+    })
+
+})
+
+const accessLogStream = fs.createWriteStream(
+    path.join(__dirname, 'access.log'),
+    { flags: 'a' }
+);
+
+
+
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(compression())
 app.use(helmet())
-app.use(morgan('combined', {stream:accessLogStream}))
+app.use(morgan('combined', { stream: accessLogStream }))
 app.use(authRouter);
 app.use(chatRouter);
 app.use(groupRouter);
@@ -59,7 +81,7 @@ sequelize
     .sync({ alter: true })
     // .sync({ force: true })
     .then(() => {
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
     }
