@@ -8,6 +8,7 @@ const fs = require('fs')
 const helmet = require('helmet')
 const morgan = require('morgan')
 const compression = require('compression')
+const cron = require('node-cron')
 const { Server } = require('socket.io')
 
 //router
@@ -20,6 +21,7 @@ const User = require('./models/user');
 const Group = require('./models/group');
 const Chat = require('./models/chat');
 const UserGroup = require('./models/userGroup');
+const ArchiveChat = require('./models/archiveChat');
 
 const app = express();
 const server = http.createServer(app)
@@ -53,6 +55,7 @@ const accessLogStream = fs.createWriteStream(
 
 
 
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(compression())
@@ -71,6 +74,8 @@ Group.belongsToMany(User, { through: UserGroup });
 Group.hasMany(Chat);
 Chat.belongsTo(User);
 Chat.belongsTo(Group);
+ArchiveChat.belongsTo(User);
+ArchiveChat.belongsTo(Group);
 
 
 const PORT = process.env.PORT || 3000;
@@ -88,6 +93,25 @@ sequelize
     ).catch(err => {
         console.log(err);
     });
+
+cron.schedule('0 0 * * *', async () => {
+    try {
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const chats = await Chat.findAll({ where: { createdAt: { [sequelize.Op.lte]: oneDayAgo } } });
+        chats.forEach(async chat => {
+            await ArchiveChat.create({ message_text: chat.message_text, name: chat.name, UserId: chat.UserId, GroupId: chat.GroupId });
+            await Chat.destroy({ where: { id: chat.id } });
+        });
+    } catch (error) {
+        console.log(error);
+    }
+},
+    {
+        scheduled: true,
+        timezone: "Asia/Kolkata",
+    }
+
+);
 
 
 
